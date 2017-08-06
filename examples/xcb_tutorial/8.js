@@ -46,7 +46,7 @@
 "use strict";
 
 const ref = require("ref");
-const xcb = require("../../index.js");
+const xcb = require("../../xcb.js");
 
 /* Open the connection to the X server */
 const c = xcb.connect (null, null);

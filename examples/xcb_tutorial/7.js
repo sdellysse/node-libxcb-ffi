@@ -37,7 +37,7 @@
 "use strict";
 
 const ref = require("ref");
-const xcb = require("../../index.js");
+const xcb = require("../../xcb.js");
 
 /* Open the connection to the X server. Use the DISPLAY environment variable */
 const screen_nbr_ref = ref.alloc(ref.types.int);
@@ -49,14 +49,14 @@ let screen;
 const iter = xcb.setup_roots_iterator (xcb.get_setup (c));
 for (; iter.rem; --screen_nbr, xcb.screen_next (ref.refType(iter)))
   if (screen_nbr === 0) {
-    screen = iter.data.deref();
+    screen = iter.data;
     break;
   }
 
 console.log("");
-console.log(`Informations of screen ${ screen.root }:`);
-console.log(`  width.........: ${ screen.width_in_pixels }`);
-console.log(`  height........: ${ screen.height_in_pixels }`);
-console.log(`  white pixel...: ${ screen.white_pixel }`);
-console.log(`  black pixel...: ${ screen.black_pixel }`);
+console.log(`Informations of screen ${ screen.deref().root }:`);
+console.log(`  width.........: ${ screen.deref().width_in_pixels }`);
+console.log(`  height........: ${ screen.deref().height_in_pixels }`);
+console.log(`  white pixel...: ${ screen.deref().white_pixel }`);
+console.log(`  black pixel...: ${ screen.deref().black_pixel }`);
 console.log("");

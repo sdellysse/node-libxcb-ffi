@@ -4,7 +4,7 @@ const ffi       = require("ffi");
 const ref       = require("ref");
 const struct = require("ref-struct");
 
-const xcb = exports;
+const xcb = module.exports;
 const p = (type) => ref.refType(type);
 
 xcb.colormap_t = ref.types.uint32;
@@ -69,56 +69,91 @@ xcb.setup_t = struct({
 
 xcb.connection_t = ref.types.void;
 
-for (const [name, fn] of Object.entries(ffi.Library("libxcb", {
-  xcb_connect: [p(xcb.connection_t), [
-    p(ref.types.CString), /* displayname */
-    p(ref.types.int),     /* screenp */
-  ]],
+const defs = {
+  xcb_connect: {
+    returns: p(xcb.connection_t),
+    params: [
+      {displayname: p(ref.types.CString)},
+      {screenp:     p(ref.types.int)    },
+    ],
+  },
 
-  xcb_create_window: [xcb.void_cookie_t, [
-    p(xcb.connection_t), /* c */
-    ref.types.uint8,     /* depth */
-    xcb.window_t,        /* wid */
-    xcb.window_t,        /* parent */
-    ref.types.int16,     /* x */
-    ref.types.int16,     /* y */
-    ref.types.uint16,    /* width */
-    ref.types.uint16,    /* height */
-    ref.types.uint16,    /* border_width */
-    ref.types.uint16,    /* class */
-    xcb.visualid_t,      /* visual */
-    ref.types.uint32,    /* value_mask */
-    p(ref.types.uint32), /* value_list */
-  ]],
+  xcb_create_window: {
+    returns: xcb.void_cookie_t,
+    params: [
+      {c:            p(xcb.connection_t)},
+      {depth:        ref.types.uint8},
+      {wid:          xcb.window_t},
+      {parent:       xcb.window_t},
+      {x:            ref.types.int16},
+      {y:            ref.types.int16},
+      {width:        ref.types.uint16},
+      {height:       ref.types.uint16},
+      {border_width: ref.types.uint16},
+      {class:        ref.types.uint16},
+      {visual:       xcb.visualid_t},
+      {value_mask:   ref.types.uint32},
+      {value_list:   p(ref.types.uint32)},
+    ],
+  },
 
-  xcb_disconnect: [ref.types.void, [
-    p(xcb.connection_t), /* c */
-  ]],
+  xcb_disconnect: {
+    returns: ref.types.void,
+    params: [
+      {c: xcb.connection_t},
+    ],
+  },
 
-  xcb_flush: [ref.types.int, [
-    p(xcb.connection_t), /* c */
-  ]],
+  xcb_flush: {
+    name: "xcb_flush",
+    returns: ref.types.int,
+    params: [
+      {c: p(xcb.connection_t)},
+    ],
+  },
 
-  xcb_generate_id: [xcb.window_t, [
-    p(xcb.connection_t), /* c */
-  ]],
+  xcb_generate_id: {
+    returns: xcb.window_t,
+    params: [
+      {c: p(xcb.connection_t)},
+    ],
+  },
 
-  xcb_get_setup: [p(xcb.setup_t), [
-    p(xcb.connection_t), /* c */
-  ]],
+  xcb_get_setup: {
+    returns: p(xcb.setup_t),
+    params: [
+      {c: p(xcb.connection_t)},
+    ],
+  },
 
-  xcb_map_window: [p(xcb.void_cookie_t), [
-    p(xcb.connection_t), /* c */
-    xcb.window_t,        /* window */
-  ]],
+  xcb_map_window: {
+    returns: p(xcb.void_cookie_t),
+    params:[
+      {c:      p(xcb.connection_t)},
+      {window: xcb.window_t},
+    ],
+  },
 
-  xcb_screen_next: [ref.types.void, [
-    p(xcb.screen_iterator_t), /* iter */
-  ]],
+  xcb_screen_next: {
+    returns: ref.types.void,
+    params: [
+      {iter: p(xcb.screen_iterator_t)},
+    ],
+  },
 
-  xcb_setup_roots_iterator: [xcb.screen_iterator_t, [
-    p(xcb.setup_t),
-  ]],
-}))) {
+  xcb_setup_roots_iterator: {
+    returns: xcb.screen_iterator_t,
+    params: [
+      {param0: p(xcb.setup_t)},
+    ],
+  },
+};
+
+const ffiArgs = {};
+for (const [ name, { returns, params } ] of Object.entries(defs)) {
+  ffiArgs[name] = [returns, params.map(p => Object.values(p)[0])];
+}
+
+for (const [name, fn] of Object.entries(ffi.Library("libxcb", ffiArgs))) {
   xcb[name.replace(/^xcb_/, "")] = fn;
 }
