@@ -1,7 +1,7 @@
 "use strict";
 
-const ffi       = require("ffi");
-const ref       = require("ref");
+const ffi    = require("./ffi.js");
+const ref    = require("ref");
 const struct = require("ref-struct");
 
 const xcb = module.exports;
@@ -100,7 +100,7 @@ const defs = {
   xcb_disconnect: {
     returns: ref.types.void,
     params: [
-      {c: xcb.connection_t},
+      {c: p(xcb.connection_t)},
     ],
   },
 
@@ -137,14 +137,14 @@ const defs = {
   xcb_screen_next: {
     returns: ref.types.void,
     params: [
-      {iter: p(xcb.screen_iterator_t)},
+      {i: p(xcb.screen_iterator_t)},
     ],
   },
 
   xcb_setup_roots_iterator: {
     returns: xcb.screen_iterator_t,
     params: [
-      {param0: p(xcb.setup_t)},
+      {R: p(xcb.setup_t)},
     ],
   },
 };
