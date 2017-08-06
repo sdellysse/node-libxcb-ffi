@@ -17,5 +17,9 @@
 
 const xcb = require("../../xcb.js");
 
-/* Open the connection to the X server. Use the DISPLAY environment variable as the default display name */
-const c = xcb.connect (null, null);
+const main = async () => {
+  /* Open the connection to the X server. Use the DISPLAY environment variable as the default display name */
+  const c = await xcb.connect (null, null);
+};
+
+main();

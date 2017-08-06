@@ -69,7 +69,7 @@ xcb.setup_t = struct({
 
 xcb.connection_t = ref.types.void;
 
-const defs = {
+for (const [name, fn] of Object.entries(ffi.forLibrary("libxcb", {
   xcb_connect: {
     returns: p(xcb.connection_t),
     params: [
@@ -147,13 +147,6 @@ const defs = {
       {R: p(xcb.setup_t)},
     ],
   },
-};
-
-const ffiArgs = {};
-for (const [ name, { returns, params } ] of Object.entries(defs)) {
-  ffiArgs[name] = [returns, params.map(p => Object.values(p)[0])];
-}
-
-for (const [name, fn] of Object.entries(ffi.Library("libxcb", ffiArgs))) {
+}))) {
   xcb[name.replace(/^xcb_/, "")] = fn;
 }

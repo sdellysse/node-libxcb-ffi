@@ -1,5 +1,3 @@
-// Copied the Library function here to modify it to just keep going when
-// a function doesn't exist.
 const ffi = require("ffi");
 const DynamicLibrary = ffi.DynamicLibrary;
 const ForeignFunction = ffi.ForeignFunction;
@@ -9,7 +7,7 @@ const RTLD_NOW = ffi.DynamicLibrary.FLAGS.RTLD_NOW;
 // No-OP
 const debug = () => {};
 
-const EXT = Library.EXT = {
+const EXT = {
     'linux':  '.so'
   , 'linux2': '.so'
   , 'sunos':  '.so'
@@ -22,49 +20,33 @@ const EXT = Library.EXT = {
 }[process.platform]
 
 
-function Library (libfile, funcs, lib) {
-  //debug('creating Library object for', libfile)
-
-  if (libfile && libfile.indexOf(EXT) === -1) {
-    //debug('appending library extension to library name', EXT)
-    libfile += EXT
-  }
-
-  if (!lib) {
-    lib = {}
-  }
-  var dl = new DynamicLibrary(libfile || null, RTLD_NOW)
-
-  Object.keys(funcs || {}).forEach(function (func) {
-    debug('defining function', func)
-
-    var fptr = dl.get(func)
-      , info = funcs[func]
-
-    if (fptr.isNull()) {
-      //throw new Error('Library: "' + libfile
-      //  + '" returned NULL function pointer for "' + func + '"')
-      return;
+module.exports = Object.assign({}, ffi, {
+  forLibrary: (libfile, funcs) => {
+    if (libfile && libfile.indexOf(EXT) === -1) {
+      return module.exports.forLibrary(`${ libfile }${ EXT }`, funcs);
     }
 
-    var resultType = info[0]
-      , paramTypes = info[1]
-      , fopts = info[2]
-      , abi = fopts && fopts.abi
-      , async = fopts && fopts.async
-      , varargs = fopts && fopts.varargs
+    const retval = {};
 
-    if (varargs) {
-      lib[func] = VariadicForeignFunction(fptr, resultType, paramTypes, abi)
-    } else {
-      var ff = ForeignFunction(fptr, resultType, paramTypes, abi)
-      lib[func] = async ? ff.async : ff
+    const dl = new DynamicLibrary(libfile || null, RTLD_NOW)
+    for (const [ name, { returns, params } ] of Object.entries(funcs)) {
+      const functionPointer = dl.get(name);
+      if (functionPointer.isNull()) {
+        continue;
+      }
+
+      const func = ForeignFunction(functionPointer, returns, params.map(p => Object.values(p)[0]));
+
+      retval[name] = (...args) => new Promise((resolve, reject) => func.async(...args, (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(res);
+      }));
+
+      retval[`${ name }Sync`] = func;
     }
-  })
 
-  return lib
-};
-
-module.exports =  Object.assign({}, ffi, {
-  Library,
+    return retval;
+  },
 });
